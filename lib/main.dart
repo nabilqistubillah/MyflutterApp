@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert'; // Untuk encode/decode data
 
 void main() {
   runApp(const TodoListApp());
@@ -12,7 +14,24 @@ class TodoListApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Todo List',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true, // pakai Material Design 3 (lebih modern)
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.teal,
+          ),
+          bodyMedium: TextStyle(fontSize: 18),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            backgroundColor: MaterialStatePropertyAll(Colors.teal),
+            foregroundColor: MaterialStatePropertyAll(Colors.white),
+          ),
+        ),
+      ),
       home: const TodoHomePage(),
     );
   }
@@ -22,14 +41,33 @@ class TodoHomePage extends StatefulWidget {
   const TodoHomePage({super.key});
 
   @override
-  @override
   _TodoHomePageState createState() => _TodoHomePageState();
 }
 
 class _TodoHomePageState extends State<TodoHomePage> {
-  final List<String> _todos = []; // Daftar tugas
-  final TextEditingController _controller =
-      TextEditingController(); // Untuk input teks
+  final List<String> _todos = [];
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodos();
+  }
+
+  Future<void> _loadTodos() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? todosString = prefs.getString('todos');
+    if (todosString != null) {
+      setState(() {
+        _todos.addAll(List<String>.from(jsonDecode(todosString)));
+      });
+    }
+  }
+
+  Future<void> _saveTodos() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('todos', jsonEncode(_todos));
+  }
 
   void _addTodo() {
     final text = _controller.text;
@@ -38,6 +76,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
         _todos.add(text);
         _controller.clear();
       });
+      _saveTodos();
     }
   }
 
@@ -45,6 +84,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
     setState(() {
       _todos.removeAt(index);
     });
+    _saveTodos();
   }
 
   @override
