@@ -89,11 +89,12 @@ class _TodoHomePageState extends State<TodoHomePage> {
   void _removeTodo(int index) {
     final todoToRemove = _filteredTodos[index];
     setState(() {
-      _todos.removeAt(todoToRemove);
+      _todos.remove(todoToRemove);
     });
     _saveTodos();
     _filterTodos();
   }
+
   void _filterTodos() {
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -110,7 +111,6 @@ class _TodoHomePageState extends State<TodoHomePage> {
   }
 
   @override
- 
   void dispose() {
     _controller.dispose();
     _searchController.dispose();
@@ -119,59 +119,58 @@ class _TodoHomePageState extends State<TodoHomePage> {
 
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar Tugas'),
-        ),
+      appBar: AppBar(title: const Text('Daftar Tugas')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _searchController,
-              decoration: const InputDecoration(  
+              decoration: const InputDecoration(
                 labelText: 'Cari Tugas',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
-              ),      
-            ),      
+              ),
+            ),
             const SizedBox(height: 16),
             Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  decoration: const InputDecoration(
-                    labelText: 'Tambahkan Tugas',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: _addTodo,
-                child: const Text('Tambah'),
-              )
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredTodos.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  child: ListTile(
-                    title: Text(_filteredTodos[index]),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _removeTodo(index),
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      labelText: 'Tambahkan Tugas',
+                      border: OutlineInputBorder(),
                     ),
                   ),
-                );
-              },
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _addTodo,
+                  child: const Text('Tambah'),
+                ),
+              ],
             ),
-          )
-        ],
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _filteredTodos.length,
+                itemBuilder: (context, index) {
+                  return Card(
+                    child: ListTile(
+                      title: Text(_filteredTodos[index]),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _removeTodo(index),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
