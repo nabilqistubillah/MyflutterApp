@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // Untuk encode/decode data
+import 'dart:convert';
+import 'second_page.dart'; // Tambahkan ini
 
 void main() {
   runApp(const TodoListApp());
@@ -16,7 +17,7 @@ class TodoListApp extends StatelessWidget {
       title: 'Todo List',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true, // pakai Material Design 3 (lebih modern)
+        useMaterial3: true,
         textTheme: const TextTheme(
           titleLarge: TextStyle(
             fontSize: 22,
@@ -117,9 +118,24 @@ class _TodoHomePageState extends State<TodoHomePage> {
     super.dispose();
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Daftar Tugas')),
+      appBar: AppBar(
+        title: const Text('Daftar Tugas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.arrow_forward),
+            tooltip: 'Ke Halaman Kedua',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SecondPage()),
+              );
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
