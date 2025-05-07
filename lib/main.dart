@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'second_page.dart'; // Tambahkan ini
+import 'second_page.dart';
 
 void main() {
   runApp(const TodoListApp());
@@ -13,24 +13,18 @@ class TodoListApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Todo List',
+      title: 'Aplikasi Flutter',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
+        primarySwatch: Colors.blue, // Warna utama aplikasi
+        scaffoldBackgroundColor: Colors.white, // Warna latar belakang Scaffold
+        fontFamily: 'PlayfairDisplay', // Font global
         textTheme: const TextTheme(
-          titleLarge: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.teal,
-          ),
-          bodyMedium: TextStyle(fontSize: 18),
+          bodyLarge: TextStyle(fontSize: 18.0, color: Colors.black87),
+          titleLarge: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ButtonStyle(
-            backgroundColor: MaterialStatePropertyAll(Colors.teal),
-            foregroundColor: MaterialStatePropertyAll(Colors.white),
-          ),
+        appBarTheme: const AppBarTheme(
+          color: Colors.blue, // Warna app bar
+          titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
       ),
       home: const TodoHomePage(),
@@ -46,8 +40,8 @@ class TodoHomePage extends StatefulWidget {
 }
 
 class _TodoHomePageState extends State<TodoHomePage> {
-  final List<String> _todos = [];
-  final List<String> _filteredTodos = [];
+  final List<Map<String, dynamic>> _todos = [];
+  final List<Map<String, dynamic>> _filteredTodos = [];
   final TextEditingController _controller = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
@@ -62,7 +56,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
     final prefs = await SharedPreferences.getInstance();
     final String? todosString = prefs.getString('todos');
     if (todosString != null) {
-      final todosList = List<String>.from(jsonDecode(todosString));
+      final todosList = List<Map<String, dynamic>>.from(
+        jsonDecode(todosString),
+      );
       setState(() {
         _todos.addAll(todosList);
         _filteredTodos.addAll(todosList);
@@ -79,7 +75,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
     final text = _controller.text;
     if (text.isNotEmpty) {
       setState(() {
-        _todos.add(text);
+        _todos.add({'task': text, 'done': false});
         _controller.clear();
       });
       _saveTodos();
@@ -106,7 +102,9 @@ class _TodoHomePageState extends State<TodoHomePage> {
       } else {
         _filteredTodos
           ..clear()
-          ..addAll(_todos.where((todo) => todo.toLowerCase().contains(query)));
+          ..addAll(
+            _todos.where((todo) => todo['task'].toLowerCase().contains(query)),
+          );
       }
     });
   }
@@ -121,21 +119,7 @@ class _TodoHomePageState extends State<TodoHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar Tugas'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.arrow_forward),
-            tooltip: 'Ke Halaman Kedua',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SecondPage()),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Daftar Tugas')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -174,7 +158,28 @@ class _TodoHomePageState extends State<TodoHomePage> {
                 itemBuilder: (context, index) {
                   return Card(
                     child: ListTile(
-                      title: Text(_filteredTodos[index]),
+                      leading: Checkbox(
+                        value: _filteredTodos[index]['done'],
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _filteredTodos[index]['done'] = value!;
+                            final todoIndex = _todos.indexOf(
+                              _filteredTodos[index],
+                            );
+                            _todos[todoIndex]['done'] = value;
+                          });
+                          _saveTodos();
+                        },
+                      ),
+                      title: Text(
+                        _filteredTodos[index]['task'],
+                        style: TextStyle(
+                          decoration:
+                              _filteredTodos[index]['done']
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                        ),
+                      ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () => _removeTodo(index),
@@ -183,6 +188,16 @@ class _TodoHomePageState extends State<TodoHomePage> {
                   );
                 },
               ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SecondPage()),
+                );
+              },
+              child: const Text('Ke Halaman Kedua'),
             ),
           ],
         ),
