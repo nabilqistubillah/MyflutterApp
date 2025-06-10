@@ -1,176 +1,197 @@
 import 'package:flutter/material.dart';
-import 'second_page.dart';
 
-void main() => runApp(const TodoListApp());
+void main() {
+  runApp(const MyApp());
+}
 
-class TodoListApp extends StatelessWidget {
-  const TodoListApp({super.key});
+class TodoItem {
+  final int id;
+  final String text;
+  bool isDone;
+
+  TodoItem({required this.id, required this.text, this.isDone = false});
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'To-Do List',
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        scaffoldBackgroundColor: Colors.grey[100],
-      ),
-      home: const TodoHomePage(),
+      title: 'To-Do App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
+      home: const TodoPage(),
     );
   }
 }
 
-class TodoHomePage extends StatefulWidget {
-  const TodoHomePage({super.key});
+class TodoPage extends StatefulWidget {
+  const TodoPage({super.key});
 
   @override
-  State<TodoHomePage> createState() => _TodoHomePageState();
+  State<TodoPage> createState() => _TodoPageState();
 }
 
-class _TodoHomePageState extends State<TodoHomePage> {
-  final List<Map<String, dynamic>> _todoList = [];
-  final TextEditingController _textController = TextEditingController();
+class _TodoPageState extends State<TodoPage> {
+  final List<TodoItem> _todos = [TodoItem(id: 1, text: 'hai', isDone: true)];
+  final TextEditingController _inputController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
-  void _addTodoItem() {
-    final text = _textController.text.trim();
-    if (text.isNotEmpty) {
-      setState(() {
-        _todoList.add({'text': text, 'done': false});
-        _textController.clear();
-      });
-    }
+  List<TodoItem> get _filteredTodos {
+    final query = _searchController.text.toLowerCase();
+    return _todos
+        .where((todo) => todo.text.toLowerCase().contains(query))
+        .toList();
   }
 
-  void _toggleDone(int index) {
+  void _addTodo() {
+    final text = _inputController.text.trim();
+    if (text.isEmpty) return;
+
     setState(() {
-      _todoList[index]['done'] = !_todoList[index]['done'];
+      _todos.insert(
+        0,
+        TodoItem(id: DateTime.now().millisecondsSinceEpoch, text: text),
+      );
+      _inputController.clear();
     });
   }
 
-  void _deleteItem(int index) {
+  void _toggleTodo(int id) {
     setState(() {
-      _todoList.removeAt(index);
+      final todo = _todos.firstWhere((item) => item.id == id);
+      todo.isDone = !todo.isDone;
     });
+  }
+
+  void _deleteTodo(int id) {
+    setState(() {
+      _todos.removeWhere((item) => item.id == id);
+    });
+  }
+
+  void _goToSecondPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SecondPage()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.purple[50],
       appBar: AppBar(
-        title: const Text('📋 My To-Do List'),
+        backgroundColor: Colors.transparent,
+        title: const Text('📋 To-Do List'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.arrow_forward_ios),
-            tooltip: 'Halaman Kedua',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SecondPage()),
-              );
-            },
-          ),
-        ],
+        elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
         child: Column(
           children: [
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+            // Search Bar + Buku Button
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: 'Cari tugas...',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        decoration: const InputDecoration.collapsed(
-                          hintText: 'Tambahkan tugas...',
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.add_circle,
-                        color: Colors.teal,
-                        size: 28,
-                      ),
-                      onPressed: _addTodoItem,
-                    ),
-                  ],
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _goToSecondPage,
+                  icon: const Icon(Icons.book, color: Colors.deepPurple),
+                  tooltip: 'Halaman Catatan',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Input Field
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: TextField(
+                controller: _inputController,
+                onSubmitted: (_) => _addTodo(),
+                decoration: const InputDecoration(
+                  hintText: 'Tambahkan tugas...',
+                  border: InputBorder.none,
                 ),
               ),
             ),
             const SizedBox(height: 16),
+            // List Tugas
             Expanded(
-              child:
-                  _todoList.isEmpty
-                      ? const Center(
-                        child: Text(
-                          'Belum ada tugas ☁️',
-                          style: TextStyle(color: Colors.grey),
+              child: ListView.builder(
+                itemCount: _filteredTodos.length,
+                itemBuilder: (context, index) {
+                  final todo = _filteredTodos[index];
+                  return Card(
+                    child: ListTile(
+                      leading: IconButton(
+                        icon: Icon(
+                          todo.isDone
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: todo.isDone ? Colors.green : Colors.grey,
                         ),
-                      )
-                      : ListView.separated(
-                        itemCount: _todoList.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final item = _todoList[index];
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.shade300,
-                                  blurRadius: 4,
-                                  offset: const Offset(2, 2),
-                                ),
-                              ],
-                            ),
-                            child: ListTile(
-                              leading: IconButton(
-                                icon: Icon(
-                                  item['done']
-                                      ? Icons.check_circle
-                                      : Icons.radio_button_unchecked,
-                                  color:
-                                      item['done'] ? Colors.teal : Colors.grey,
-                                ),
-                                onPressed: () => _toggleDone(index),
-                              ),
-                              title: Text(
-                                item['text'],
-                                style: TextStyle(
-                                  decoration:
-                                      item['done']
-                                          ? TextDecoration.lineThrough
-                                          : null,
-                                  color:
-                                      item['done'] ? Colors.grey : Colors.black,
-                                ),
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () => _deleteItem(index),
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: () => _toggleTodo(todo.id),
                       ),
+                      title: Text(
+                        todo.text,
+                        style: TextStyle(
+                          decoration:
+                              todo.isDone ? TextDecoration.lineThrough : null,
+                          color: todo.isDone ? Colors.grey : Colors.black,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _deleteTodo(todo.id),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
+      // Tombol Tambah di kanan bawah
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addTodo,
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class SecondPage extends StatelessWidget {
+  const SecondPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('📘 Halaman Kedua')),
+      body: const Center(child: Text('Ini adalah halaman kedua.')),
     );
   }
 }
