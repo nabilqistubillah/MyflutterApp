@@ -20,7 +20,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'To-Do App',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
+      theme: ThemeData(
+        primarySwatch: Colors.deepPurple,
+        useMaterial3: true,
+      ),
       home: const TodoPage(),
     );
   }
@@ -35,27 +38,49 @@ class TodoPage extends StatefulWidget {
 
 class _TodoPageState extends State<TodoPage> {
   final List<TodoItem> _todos = [TodoItem(id: 1, text: 'hai', isDone: true)];
-  final TextEditingController _inputController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
   List<TodoItem> get _filteredTodos {
     final query = _searchController.text.toLowerCase();
-    return _todos
-        .where((todo) => todo.text.toLowerCase().contains(query))
-        .toList();
+    return _todos.where((todo) => todo.text.toLowerCase().contains(query)).toList();
   }
 
-  void _addTodo() {
-    final text = _inputController.text.trim();
-    if (text.isEmpty) return;
-
+  void _addTodo(String text) {
     setState(() {
-      _todos.insert(
-        0,
-        TodoItem(id: DateTime.now().millisecondsSinceEpoch, text: text),
-      );
-      _inputController.clear();
+      _todos.insert(0, TodoItem(id: DateTime.now().millisecondsSinceEpoch, text: text));
     });
+  }
+
+  void _showAddTodoDialog() {
+    final TextEditingController newTaskController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tambah Tugas'),
+        content: TextField(
+          controller: newTaskController,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Tulis tugas di sini...'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final text = newTaskController.text.trim();
+              if (text.isNotEmpty) {
+                _addTodo(text);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Tambah'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _toggleTodo(int id) {
@@ -92,7 +117,7 @@ class _TodoPageState extends State<TodoPage> {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
         child: Column(
           children: [
-            // Search Bar + Buku Button
+            // Search bar + tombol halaman kedua
             Row(
               children: [
                 Expanded(
@@ -115,41 +140,23 @@ class _TodoPageState extends State<TodoPage> {
                 IconButton(
                   onPressed: _goToSecondPage,
                   icon: const Icon(Icons.book, color: Colors.deepPurple),
-                  tooltip: 'Halaman Catatan',
+                  tooltip: 'Halaman Kedua',
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            // Input Field
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: TextField(
-                controller: _inputController,
-                onSubmitted: (_) => _addTodo(),
-                decoration: const InputDecoration(
-                  hintText: 'Tambahkan tugas...',
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // List Tugas
+            // List tugas
             Expanded(
               child: ListView.builder(
                 itemCount: _filteredTodos.length,
                 itemBuilder: (context, index) {
                   final todo = _filteredTodos[index];
                   return Card(
+                    color: Colors.white,
                     child: ListTile(
                       leading: IconButton(
                         icon: Icon(
-                          todo.isDone
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
+                          todo.isDone ? Icons.check_circle : Icons.radio_button_unchecked,
                           color: todo.isDone ? Colors.green : Colors.grey,
                         ),
                         onPressed: () => _toggleTodo(todo.id),
@@ -157,8 +164,7 @@ class _TodoPageState extends State<TodoPage> {
                       title: Text(
                         todo.text,
                         style: TextStyle(
-                          decoration:
-                              todo.isDone ? TextDecoration.lineThrough : null,
+                          decoration: todo.isDone ? TextDecoration.lineThrough : null,
                           color: todo.isDone ? Colors.grey : Colors.black,
                         ),
                       ),
@@ -174,9 +180,9 @@ class _TodoPageState extends State<TodoPage> {
           ],
         ),
       ),
-      // Tombol Tambah di kanan bawah
+      // Tombol + di kanan bawah
       floatingActionButton: FloatingActionButton(
-        onPressed: _addTodo,
+        onPressed: _showAddTodoDialog,
         backgroundColor: Colors.green,
         child: const Icon(Icons.add),
       ),
@@ -191,7 +197,9 @@ class SecondPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('📘 Halaman Kedua')),
-      body: const Center(child: Text('Ini adalah halaman kedua.')),
+      body: const Center(
+        child: Text('Ini adalah halaman kedua.'),
+      ),
     );
   }
 }
